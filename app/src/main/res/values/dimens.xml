@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="default_padding">16dp</dimen>
+    <dimen name="tv_distance_textSize">48sp</dimen>
+
+    <item name="divider" type="dimen" format="float">1000.000</item>
+</resources>
