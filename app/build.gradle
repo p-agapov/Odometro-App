@@ -3,7 +3,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 ext {
-    rxkotlinVersion3 = '3.0.0'
+    rxVersion3 = '3.0.0'
 }
 
 android {
@@ -45,7 +45,9 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation("io.reactivex.rxjava3:rxkotlin:$rxkotlinVersion3")
+    implementation 'com.google.android.material:material:1.1.0'
+    implementation("io.reactivex.rxjava3:rxkotlin:$rxVersion3")
+    implementation("io.reactivex.rxjava3:rxandroid:$rxVersion3")
 
     testImplementation 'junit:junit:4.12'
 

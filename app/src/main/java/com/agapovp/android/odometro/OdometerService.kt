@@ -12,10 +12,17 @@ import android.os.Binder
 import android.os.Bundle
 import android.os.IBinder
 import androidx.core.content.ContextCompat
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
+import io.reactivex.rxjava3.disposables.CompositeDisposable
+import io.reactivex.rxjava3.schedulers.Schedulers
 
 class OdometerService : Service() {
 
     private val binder: IBinder = OdometerBinder()
+    private val compositeDisposable = CompositeDisposable()
+
+    private var sharedPreferencesInteractor: SharedPreferencesInteractor? =
+        SharedPreferencesInteractor()
 
     private lateinit var locationListener: LocationListener
     private lateinit var locationManager: LocationManager
@@ -23,9 +30,14 @@ class OdometerService : Service() {
     override fun onCreate() {
         super.onCreate()
 
-        distanceInMeters = getSharedPreferences(PREFERENCE_FILE_KEY, Context.MODE_PRIVATE).getFloat(
-            SAVED_DISTANCE_METERS_KEY, 0f
-        ).toDouble()
+        sharedPreferencesInteractor?.also {
+            compositeDisposable.add(
+                it.getFromSharedPreference(SAVED_DISTANCE_METERS_KEY, this)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe { t -> distanceInMeters = t }
+            )
+        }
 
         locationListener = object : LocationListener {
             override fun onLocationChanged(location: Location) {
@@ -65,13 +77,36 @@ class OdometerService : Service() {
             locationManager.removeUpdates(locationListener)
         }
 
-        with(getSharedPreferences(PREFERENCE_FILE_KEY, Context.MODE_PRIVATE).edit()) {
-            putFloat(SAVED_DISTANCE_METERS_KEY, distanceInMeters.toFloat())
-            apply()
+        sharedPreferencesInteractor?.also {
+            compositeDisposable.add(
+                it.saveToSharedPreference(
+                    SAVED_DISTANCE_METERS_KEY,
+                    distanceInMeters.toFloat(),
+                    this
+                )
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe()
+            )
         }
+
+        sharedPreferencesInteractor = null
+        compositeDisposable.clear()
     }
 
     fun getDistance() = distanceInMeters / resources.getFloat(R.dimen.divider)
+
+    fun resetDistance() {
+        distanceInMeters = 0.0
+        sharedPreferencesInteractor?.let {
+            compositeDisposable.add(
+                it.saveToSharedPreference(SAVED_DISTANCE_METERS_KEY, 0f, this)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe()
+            )
+        }
+    }
 
     inner class OdometerBinder : Binder() {
         fun getOdometer() = this@OdometerService
@@ -80,8 +115,6 @@ class OdometerService : Service() {
     companion object {
         const val PERMISSION_FINE_LOCATION = android.Manifest.permission.ACCESS_FINE_LOCATION
 
-        private const val PREFERENCE_FILE_KEY =
-            "com.agapovp.android.odometro.odometer_service_preference_file_key"
         private const val SAVED_DISTANCE_METERS_KEY = "saved_distance_meters_key"
 
         private var lastLocation: Location? = null

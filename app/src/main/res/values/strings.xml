@@ -1,7 +1,10 @@
 <resources>
     <string name="app_name">Odometro</string>
 
-    <string name="measure">km</string>
+    <string name="tv_distance_measure">km</string>
+    <string name="snackbar_positive_text" translatable="false">Reset</string>
+    <string name="snackbar_negative_text" translatable="false">Canceled</string>
+
     <string name="channel_name" translatable="false">Location notifications</string>
     <string name="channel_description" translatable="false">Notifications for location events</string>
     <string name="permission_denied" translatable="false">Location permission required</string>

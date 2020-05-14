@@ -12,16 +12,19 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.DialogFragment
 import com.agapovp.android.odometro.OdometerService.Companion.PERMISSION_FINE_LOCATION
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), ResetDialogFragment.ResetDialogListener {
 
     private var odometer: OdometerService? = null
     private var bound = false
@@ -111,6 +114,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onDialogPositiveClick(dialog: DialogFragment) {
+        tv_distance.text = getDistanceString(0.0)
+        odometer?.resetDistance()
+        Snackbar.make(
+            findViewById(R.id.coordinator_layout),
+            getString(R.string.snackbar_positive_text),
+            Snackbar.LENGTH_LONG
+        )
+            .show()
+    }
+
+    override fun onDialogNegativeClick(dialog: DialogFragment) {
+        Snackbar.make(
+            findViewById(R.id.coordinator_layout),
+            getString(R.string.snackbar_negative_text),
+            Snackbar.LENGTH_SHORT
+        )
+            .show()
+    }
+
+    fun onResetButtonClicked(view: View) {
+        ResetDialogFragment().show(
+            supportFragmentManager,
+            ResetDialogFragment::class.java.canonicalName
+        )
+    }
+
     private fun displayDistance() {
         val handler = Handler()
         handler.post(object : Runnable {
@@ -121,17 +151,17 @@ class MainActivity : AppCompatActivity() {
                         distance = it.getDistance()
                     }
                 }
-
-                val distanceString = String.format(
-                    Locale.getDefault(),
-                    "%1$,.3f ${getString(R.string.measure)}",
-                    distance
-                )
-                tv_distance.text = distanceString
+                tv_distance.text = getDistanceString(distance)
                 handler.postDelayed(this, 1000)
             }
         })
     }
+
+    private fun getDistanceString(distance: Double) = String.format(
+        Locale.getDefault(),
+        "%1$,.3f ${getString(R.string.tv_distance_measure)}",
+        distance
+    )
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
